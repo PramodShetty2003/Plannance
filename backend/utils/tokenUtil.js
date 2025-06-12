@@ -1,66 +1,81 @@
-const jwt = require('jsonwebtoken');
-const logger = require('../config/logger');
+import express from 'express';
+import jwt from 'jsonwebtoken';
 
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET ;
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET ;
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 
-const createToken = async (user) => {
+//Create Access Token
+
+const createAccessToken = (user) => {
     try {
         const payload = {
             id: user.id,
-            email: user.emailId,
-            firstname: user.firstname,
-            lastname: user.lastname
+            username: user.username,
+            email: user.email,
         };
-
-        return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
-    } catch (error) {
-        logger.error('Error creating access token:', error);
-        throw error;
+        return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
+            expiresIn: '10m', // 10 minutes
+        });
+    } catch (err) {
+        console.log(err);
     }
 };
 
-const createRefreshToken = async (user) => {
+//Create Refresh Token
+
+const createRefreshToken = (id, username, email) => {
     try {
         const payload = {
             id: user.id,
-            email: user.emailId,
-            firstname: user.firstname,
-            lastname: user.lastname
+            username: user.username,
+            email: user.email,
         };
-
-        return jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: '30d' });
-    } catch (error) {
-        logger.error('Error creating refresh token:', error);
-        throw error;
+        return jwt.sign(payload, REFRESH_TOKEN_SECRET, {
+            expiresIn: '7d',
+        });
+    } catch (err) {
+        console.log(err);
     }
 };
 
-const decodeToken = (token) => {
-    try {
-        const decoded = jwt.decode(token);
-        return decoded;
-    } catch (error) {
-        logger.error('Token decoding failed:', error);
-        throw new Error('Invalid token');
-    }
-}
-
+//Verify Token
 const verifyToken = (token, options = { isRefresh: false }) => {
     try {
-      const secret = options.isRefresh ? REFRESH_TOKEN_SECRET : ACCESS_TOKEN_SECRET;
-      return jwt.verify(token, secret);
-    } catch (error) {
-      logger.error('Error verifying token:', error);
-      throw error;
+        const secret = options.isRefresh ? REFRESH_TOKEN_SECRET : ACCESS_TOKEN_SECRET;
+        return jwt.verify(token, secret);
+    } catch (err) {
+        console.log(err);
     }
-  };
-  
-
-module.exports = {
-    createToken,
-    createRefreshToken,
-    decodeToken,
-    verifyToken
 };
 
+
+//Send Access Token via Cookie
+const sendAccessToken = (res, token) => {
+    res.cookie('access_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+        maxAge: 10 * 60 * 1000, // 10 minutes
+    }).status(201)
+        .json({ success: true, user: { id: user._id, name: user.name, email: user.email } });;
+};
+
+//Send Refresh Token via Cookie
+const sendRefreshToken = (res, token) => {
+    res.cookie('refresh_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+        path: '/api/auth/refresh-token',
+        maxAge: 7 * 24 * 60 * 60 * 1000,//7 days
+    }).status(201)
+        .json({ success: true, user: { id: user._id, name: user.name, email: user.email } });;
+};
+
+export {
+    createAccessToken,
+    createRefreshToken,
+    verifyToken,
+    sendAccessToken,
+    sendRefreshToken,
+}
