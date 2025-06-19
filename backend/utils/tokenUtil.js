@@ -4,9 +4,13 @@ import jwt from 'jsonwebtoken';
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 
-//Create Access Token
+// Check if the JWT secrets are defined
+if (!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET) {
+    throw new Error("JWT secrets are not defined in .env");
+  }  
 
-const createAccessToken = (user) => {
+//Create Access Token
+export const createAccessToken = (user) => {
     try {
         const payload = {
             id: user.id,
@@ -23,7 +27,7 @@ const createAccessToken = (user) => {
 
 //Create Refresh Token
 
-const createRefreshToken = (id, username, email) => {
+export const createRefreshToken = (user) => {
     try {
         const payload = {
             id: user.id,
@@ -39,7 +43,7 @@ const createRefreshToken = (id, username, email) => {
 };
 
 //Verify Token
-const verifyToken = (token, options = { isRefresh: false }) => {
+export const verifyToken = (token, options = { isRefresh: false }) => {
     try {
         const secret = options.isRefresh ? REFRESH_TOKEN_SECRET : ACCESS_TOKEN_SECRET;
         return jwt.verify(token, secret);
@@ -48,34 +52,23 @@ const verifyToken = (token, options = { isRefresh: false }) => {
     }
 };
 
-
-//Send Access Token via Cookie
-const sendAccessToken = (res, token) => {
-    res.cookie('access_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict',
-        maxAge: 10 * 60 * 1000, // 10 minutes
-    }).status(201)
-        .json({ success: true, user: { id: user._id, name: user.name, email: user.email } });;
-};
-
-//Send Refresh Token via Cookie
-const sendRefreshToken = (res, token) => {
-    res.cookie('refresh_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict',
-        path: '/api/auth/refresh-token',
-        maxAge: 7 * 24 * 60 * 60 * 1000,//7 days
-    }).status(201)
-        .json({ success: true, user: { id: user._id, name: user.name, email: user.email } });;
-};
-
-export {
-    createAccessToken,
-    createRefreshToken,
-    verifyToken,
-    sendAccessToken,
-    sendRefreshToken,
-}
+// Set Access Token in cookie
+export const sendAccessToken = (res, token) => {
+    res.cookie('accessToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      maxAge: 10 * 60 * 1000,
+    });
+  };
+  
+  // Set Refresh Token in cookie
+  export const sendRefreshToken = (res, token) => {
+    res.cookie('refreshToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      path: '/api/auth/refresh-token',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  };

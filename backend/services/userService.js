@@ -10,26 +10,26 @@ import {
  * Register new user
  */
 export const createUser = async (userData) => {
-  const { name, email, password } = userData;
+  const { username, email, password } = userData;
 
   // Hash password
   const hashedPassword = await hashPassword(password);
 
   // Create user
   const newUser = await User.create({
-    name,
+    username,
     email,
     password: hashedPassword
   });
 
   // Generate tokens
-  const accessToken = createAccessToken(newUser._id, newUser.name, newUser.email);
-  const refreshToken = createRefreshToken(newUser._id, newUser.name, newUser.email);
+  const accessToken = createAccessToken(newUser._id, newUser.username, newUser.email);
+  const refreshToken = createRefreshToken(newUser._id, newUser.username, newUser.email);
 
   return {
     user: {
       id: newUser._id,
-      name: newUser.name,
+      username: newUser.username,
       email: newUser.email
     },
     accessToken,
@@ -43,19 +43,24 @@ export const createUser = async (userData) => {
 export const signinUser = async (userData) => {
   const { email, password } = userData;
 
+  const existingUser = await User.findOne({ email: userData.email });
+  if (existingUser) {
+      throw new Error('User already exists with this email');
+  }
+
   const user = await User.findOne({ email }).select('+password');
 
   if (!user || !(await verifyPassword(password, user.password))) {
     throw new Error('Invalid email or password');
   }
 
-  const accessToken = createAccessToken(user._id, user.name, user.email);
-  const refreshToken = createRefreshToken(user._id, user.name, user.email);
+  const accessToken = createAccessToken(user._id, user.username, user.email);
+  const refreshToken = createRefreshToken(user._id, user.username, user.email);
 
   return {
     user: {
       id: user._id,
-      name: user.name,
+      username: user.username,
       email: user.email
     },
     accessToken,
@@ -83,7 +88,7 @@ export const refreshUserToken = async (refreshToken) => {
       accessToken,
       user: {
         id: user._id,
-        name: user.name,
+        username: user.username,
         email: user.email
       }
     };
@@ -98,7 +103,7 @@ export const getUserId = async (userId) => {
   if (!user) throw new Error('User not found');
   return {
     id: user._id,
-    name: user.name,
+    username: user.username,
     email: user.email
   };
 };
@@ -114,7 +119,7 @@ export const updateUserDetails = async (userId, userData) => {
   if (!updatedUser) throw new Error('User not found');
   return {
     id: updatedUser._id,
-    name: updatedUser.name,
+    username: updatedUser.username,
     email: updatedUser.email
   };
 };

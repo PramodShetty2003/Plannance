@@ -142,7 +142,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+  const hasToken = document.cookie.includes('accessToken');
+
+  if (hasToken) {
     checkAuthStatus();
+  }
     return () => {
       clearRefreshTimeout();
     };

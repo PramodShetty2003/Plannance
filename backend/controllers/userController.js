@@ -16,7 +16,7 @@ import { sendAccessToken, sendRefreshToken , verifyToken} from '../utils/tokenUt
       sendRefreshToken(res, refreshToken);
       
       if (user) {
-        res.status(201).json({ success: true, message: "User registered successfully", user });
+        res.status(201).json({ success: true, message: "User registered successfully", user , accessToken, refreshToken});
       } else {
         res.status(400).json({ success: false, message: 'Failed to create user' });
       }

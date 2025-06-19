@@ -1,4 +1,9 @@
+import { useState } from "react"
+import { Mail, Lock, Eye, EyeOff, UserRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Card,
   CardContent,
@@ -6,13 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Link } from "react-router-dom"
 
 export function Login() {
+  const [showPassword, setShowPassword] = useState(false)
+
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
+    <div className="min-h-screen flex items-center justify-center bg-background backdrop-blur-sm p-4">
+            <Card className="w-full max-w-sm mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
@@ -20,41 +26,53 @@ export function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+          <form className="grid gap-y-5">
+            {/* Email field with icon */}
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
                 <Input
                   id="email"
                   type="email"
                   placeholder="m@example.com"
                   required
+                  className="pl-10"
                 />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 transform text-muted-foreground h-5 w-5" />
               </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto text-sm hover:underline underline-offset-4"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-                <Input id="password" type="password" required />
-              </div>
-              <Button type="submit" className="w-full">
-                Login
-              </Button>
-              <Button variant="outline" className="w-full">
-                Login with Google
-              </Button>
             </div>
+
+            {/* Password field with lock + eye icon */}
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  required
+                  className="pl-10 pr-10"
+                />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 transform text-muted-foreground h-5 w-5" />
+                </div>
+                {/* Show Password checkbox using shadcn */}
+                <div className="flex items-center space-x-2 mt-1 pl-3">
+                  <Checkbox
+                    id="show-password"
+                    checked={showPassword}
+                    onCheckedChange={() => setShowPassword((prev) => !prev)}
+                  />
+                  <Label htmlFor="show-password" className=" text-xs text-muted-foreground">
+                    Show Password
+                  </Label>
+                </div>
+              </div>
+            <Button className="w-full mt-4">Login</Button>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
-              <a href="#" className="underline underline-offset-4">
+              <Link to="/signup" className="underline underline-offset-4">
                 Sign up
-              </a>
+              </Link>
             </div>
           </form>
         </CardContent>

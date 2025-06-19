@@ -1,0 +1,11 @@
+https://medium.com/%40sohamdas.nest/why-dotenv-config-doesnt-work-in-nested-modules-and-how-to-fix-it-in-node-js-8cbfab85392b
+Issue Description: Why dotenv.config() Doesn’t Work in Nested Modules
+
+This problem occurs due to how ES module imports 
+are hoisted in JavaScript, 
+leading to an execution order issue that causes 
+dotenv.config() to be called too late for the environment 
+variables to be accessible in imported files.
+
+solution:-
+import 'dotenv/config'; // ✅ Automatically loads environment variables before anything else

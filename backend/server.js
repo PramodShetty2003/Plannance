@@ -1,10 +1,10 @@
+import 'dotenv/config';
 import express, { json } from 'express';
 import { connect } from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
-dotenv.config();
+
 
 import authRoutes from './routes/authRoutes.js';
 
