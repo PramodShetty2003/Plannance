@@ -22,9 +22,15 @@ export const createUser = async (userData) => {
     password: hashedPassword
   });
 
-  // Generate tokens
-  const accessToken = createAccessToken(newUser._id, newUser.username, newUser.email);
-  const refreshToken = createRefreshToken(newUser._id, newUser.username, newUser.email);
+  // createUser in userService.js
+  const payload = {
+    id: newUser._id,
+    username: newUser.username,
+    email: newUser.email
+  };
+  const accessToken = createAccessToken(payload);
+  const refreshToken = createRefreshToken(payload);
+
 
   return {
     user: {
@@ -43,19 +49,26 @@ export const createUser = async (userData) => {
 export const signinUser = async (userData) => {
   const { email, password } = userData;
 
-  const existingUser = await User.findOne({ email: userData.email });
-  if (existingUser) {
-      throw new Error('User already exists with this email');
+  //Fetch the user (including their hashed password)
+  const user = await User.findOne({ email }).select('+password');
+  if (!user) {
+    throw new Error('Invalid email or password');  // user doesn’t exist
   }
 
-  const user = await User.findOne({ email }).select('+password');
-
-  if (!user || !(await verifyPassword(password, user.password))) {
+  //Check password
+  const passwordMatches = await verifyPassword(password, user.password);
+  if (!passwordMatches) {
     throw new Error('Invalid email or password');
   }
+  // createUser in userService.js
+  const payload = {
+    id: user._id,
+    username: user.username,
+    email: user.email
+  };
 
-  const accessToken = createAccessToken(user._id, user.username, user.email);
-  const refreshToken = createRefreshToken(user._id, user.username, user.email);
+  const accessToken = createAccessToken(payload);
+  const refreshToken = createRefreshToken(payload);
 
   return {
     user: {
@@ -72,28 +85,29 @@ export const signinUser = async (userData) => {
  * Refresh access token
  */
 export const refreshUserToken = async (refreshToken) => {
-    const decoded = await verifyToken(refreshToken, { isRefresh: true });
-  
-    if (!decoded || !decoded.id) {
-      throw new Error('Invalid refresh token');
-    }
-  
-    // Fetch fresh user data (optional but recommended)
-    const user = await User.findById(decoded.id);
-    if (!user) throw new Error('User not found');
-  
-    const accessToken = createToken(user._id, user.name, user.email);
-  
-    return {
-      accessToken,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email
-      }
-    };
+  const decoded = await verifyToken(refreshToken, { isRefresh: true });
+
+  if (!decoded || !decoded.id) {
+    throw new Error('Invalid refresh token');
+  }
+
+  // Fetch fresh user data (optional but recommended)
+  const user = await User.findById(decoded.id);
+  if (!user) throw new Error('User not found');
+
+  const accessToken = createAccessToken({ id: user._id, username: user.username, email: user.email });
+
+  return {
+    accessToken,
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email
+    },
+    expiresIn: 10 * 60
   };
-  
+};
+
 
 /**
  * Get user by ID

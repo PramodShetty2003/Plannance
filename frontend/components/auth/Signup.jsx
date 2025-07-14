@@ -37,6 +37,9 @@ export function Signup() {
 
         // Manual validation before triggering loading
         if (!formData.username || !formData.email || !formData.password) {
+            toast.error("Missing fields",{
+                description: "Please fill in username, email and password.",
+              })
             return
         }
 
@@ -46,7 +49,7 @@ export function Signup() {
             toast.success("Signup successful", {
                 description: "Redirecting to dashboard...",
               });
-              navigate("/dashboard");
+              navigate("/dashboard", { replace: true });
             } catch (err) {
               toast.error("Signup failed", {
                 description: err?.message || "Please try again.",

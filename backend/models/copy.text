@@ -1,0 +1,156 @@
+// models/DefaultCategory.js
+import mongoose, { Schema } from 'mongoose';
+
+const defaultCategorySchema = new Schema({
+  name: { type: String, required: true },
+  type: { type: String, enum: ['income', 'expense'], required: true },
+  icon: { type: String },          // Optional icon name or URL
+  color: { type: String }          // Optional UI color code
+}, { timestamps: true });
+
+export default mongoose.model('DefaultCategory', defaultCategorySchema);
+
+// models/UserCategory.js
+import mongoose, { Schema } from 'mongoose';
+
+const userCategorySchema = new Schema({
+  useruid: { type: String, ref: 'User', required: true },
+  defaultCategoryId: { type: Schema.Types.ObjectId, ref: 'DefaultCategory' },
+  name: { type: String, required: true },
+  type: { type: String, enum: ['income', 'expense'], required: true }
+}, { timestamps: true });
+
+export default mongoose.model('UserCategory', userCategorySchema);
+
+// models/User.js
+import mongoose, { Schema } from 'mongoose';
+import validator from 'validator';
+import { generateUuid } from '../utils/uuid.js';
+
+const userSchema = new Schema({
+  useruid: { type: String, default: generateUuid, unique: true },
+  username: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true, validate: [validator.isEmail, 'Invalid email'] },
+  password: { type: String, required: true, minlength: 8, select: false },
+  settings: {
+    currency: { type: String, default: 'INR' },
+    darkMode: { type: Boolean, default: false }
+  },
+  hasOnboarded: { type: Boolean, default: false }
+}, { timestamps: true });
+
+export default mongoose.model('User', userSchema);
+
+// models/BudgetCycle.js
+import mongoose, { Schema } from 'mongoose';
+import { generateUuid } from '../utils/uuid.js';
+
+const categoryBudgetSchema = new Schema({
+  userCategoryId: { type: Schema.Types.ObjectId, ref: 'UserCategory', required: true },
+  categoryName: { type: String, required: true },
+  budgeted: { type: Number, default: 0 },
+  spent: { type: Number, default: 0 },
+  rolloverFromLast: { type: Number, default: 0 }
+}, { _id: false });
+
+const budgetCycleSchema = new Schema({
+  cycleId: { type: String, default: generateUuid, unique: true },
+  useruid: { type: String, ref: 'User', required: true },
+  name: { type: String },
+  startDate: { type: Date, required: true },
+  endDate: { type: Date, required: true },
+  periodType: { type: String, enum: ['weekly','biweekly','monthly','quarterly','custom'], default: 'monthly' },
+  overallLimit: { type: Number },
+  rolloverMode: { type: String, enum: ['none','full','category','savings'], default: 'none' },
+  savingsCategoryId: { type: Schema.Types.ObjectId, ref: 'UserCategory' },
+  previousCycleId: { type: String, ref: 'BudgetCycle' },
+  categoryBudgets: [categoryBudgetSchema]
+}, { timestamps: true });
+
+export default mongoose.model('BudgetCycle', budgetCycleSchema);
+
+// models/Transaction.js
+import mongoose, { Schema } from 'mongoose';
+
+const transactionSchema = new Schema({
+  useruid: { type: String, ref: 'User', required: true },
+  date: { type: Date, required: true },
+  time: { type: String, required: true },
+  amount: { type: Number, required: true, min: 0 },
+  description: { type: String },
+  userCategoryId: { type: Schema.Types.ObjectId, ref: 'UserCategory' },
+  categoryName: { type: String },
+  budgetCycleId: { type: Schema.Types.ObjectId, ref: 'BudgetCycle' },
+  type: { type: String, enum: ['income','expense'], required: true }
+}, { timestamps: true });
+
+transactionSchema.index({ useruid: 1, date: -1 });
+export default mongoose.model('Transaction', transactionSchema);
+
+// models/RecurringTransaction.js
+import mongoose, { Schema } from 'mongoose';
+
+const recurringTransactionSchema = new Schema({
+  useruid: { type: String, ref: 'User', required: true },
+  description: { type: String, required: true },
+  amount: { type: Number, required: true, min: 0 },
+  userCategoryId: { type: Schema.Types.ObjectId, ref: 'UserCategory' },
+  categoryName: { type: String },
+  frequency: { type: String, enum: ['daily','weekly','biweekly','monthly','yearly'], required: true },
+  startDate: { type: Date, default: Date.now },
+  nextDue: { type: Date },
+  lastProcessed: { type: Date },
+  isActive: { type: Boolean, default: true }
+}, { timestamps: true });
+
+export default mongoose.model('RecurringTransaction', recurringTransactionSchema);
+
+// models/MonthlyRecord.js
+import mongoose, { Schema } from 'mongoose';
+import { generateUuid } from '../utils/uuid.js';
+
+const monthlyCategorySchema = new Schema({
+  userCategoryId: { type: Schema.Types.ObjectId, ref: 'UserCategory', required: true },
+  categoryName: { type: String, required: true },
+  budgeted: { type: Number, default: 0 },
+  spent: { type: Number, default: 0 },
+  rollover: { type: Number, default: 0 }
+}, { _id: false });
+
+const monthlyRecordSchema = new Schema({
+  recordUuid: { type: String, default: generateUuid, unique: true },
+  useruid: { type: String, ref: 'User', required: true },
+  year: { type: Number, required: true },
+  month: { type: Number, required: true },
+  totalIncome: { type: Number, default: 0 },
+  totalExpense: { type: Number, default: 0 },
+  netSavings: { type: Number, default: 0 },
+  isFinalized: { type: Boolean, default: false },
+  categories: [monthlyCategorySchema]
+}, { timestamps: true });
+
+export default mongoose.model('MonthlyRecord', monthlyRecordSchema);
+
+// models/YearlyBudget.js
+import mongoose, { Schema } from 'mongoose';
+import { generateUuid } from '../utils/uuid.js';
+
+const yearlyCategorySchema = new Schema({
+  userCategoryId: { type: Schema.Types.ObjectId, ref: 'UserCategory', required: true },
+  categoryName: { type: String, required: true },
+  budgeted: { type: Number, default: 0 },
+  spent: { type: Number, default: 0 }
+}, { _id: false });
+
+const yearlyBudgetSchema = new Schema({
+  budgetUuid: { type: String, default: generateUuid, unique: true },
+  useruid: { type: String, ref: 'User', required: true },
+  year: { type: Number, required: true },
+  totalBudget: { type: Number, default: 0 },
+  totalSpent: { type: Number, default: 0 },
+  netSavings: { type: Number, default: 0 },
+  goalSavings: { type: Number },
+  categories: [yearlyCategorySchema]
+}, { timestamps: true });
+
+export default mongoose.model('YearlyBudget', yearlyBudgetSchema);

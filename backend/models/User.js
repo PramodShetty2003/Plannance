@@ -1,9 +1,14 @@
 // models/User.js
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose, { Schema } from 'mongoose';
 import validator from 'validator';
+import { generateUuid } from '../utils/uuid.js';
 
 const userSchema = new mongoose.Schema({
+  useruid: {
+    type: String,
+    default: generateUuid,
+    unique: true
+  },
   username: {
     type: String,
     required: [true, 'Please provide your name'],
@@ -14,7 +19,6 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Please provide your email'],
     unique: true,
     lowercase: true,
-    validate: [validator.isEmail, 'Please provide a valid email'],
   },
   password: {
     type: String,
@@ -22,9 +26,14 @@ const userSchema = new mongoose.Schema({
     minlength: 8,
     select: false,
   },
-}, {
-  timestamps: true,
-});
+  settings: {
+    currency: { type: String, default: 'INR' }
+  },
+  hasOnboarded: { type: Boolean, default: false }
+},
+  {
+    timestamps: true,
+  });
 
 const User = mongoose.model('User', userSchema);
 export default User;

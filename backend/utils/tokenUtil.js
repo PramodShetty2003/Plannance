@@ -52,23 +52,13 @@ export const verifyToken = (token, options = { isRefresh: false }) => {
     }
 };
 
-// Set Access Token in cookie
-export const sendAccessToken = (res, token) => {
-    res.cookie('accessToken', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: 10 * 60 * 1000,
-    });
-  };
-  
   // Set Refresh Token in cookie
   export const sendRefreshToken = (res, token) => {
     res.cookie('refreshToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Lax',
-      path: '/api/auth/refresh-token',
+      path: '/api/auth/refresh',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
   };
